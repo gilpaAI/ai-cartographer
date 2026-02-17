@@ -8,7 +8,7 @@ export interface TierConfig {
 }
 
 export interface LLMConfig {
-  provider: "anthropic" | "openai";
+  provider: "anthropic" | "openai" | "gemini";
   apiKey?: string;
   batchModel: string;
   deepModel: string;
@@ -87,9 +87,9 @@ const DEFAULT_CONFIG: CartographerConfig = {
     batchSize: 15,
   },
   llm: {
-    provider: "anthropic",
-    batchModel: "claude-haiku-4-5-20251001",
-    deepModel: "claude-sonnet-4-5-20250929",
+    provider: "gemini",
+    batchModel: "gemini-2.0-flash",
+    deepModel: "gemini-2.0-flash",
     maxConcurrent: 5,
     rpmLimit: 50,
   },

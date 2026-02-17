@@ -5,26 +5,26 @@ import type { ClassifiedFile } from "../classifier.js";
 import type { CartographerConfig } from "../config.js";
 import { AnthropicProvider } from "./anthropic.js";
 import { OpenAIProvider } from "./openai.js";
+import { GeminiProvider } from "./gemini.js";
 
 export interface AnalysisResult {
   descriptions: Map<string, string>;
   pending: string[];
 }
 
+const ENV_KEY_MAP: Record<string, string> = {
+  anthropic: "ANTHROPIC_API_KEY",
+  openai: "OPENAI_API_KEY",
+  gemini: "GEMINI_API_KEY",
+};
+
 export function createProvider(config: CartographerConfig): LLMProvider {
-  const apiKey =
-    config.llm.apiKey ??
-    (config.llm.provider === "anthropic"
-      ? process.env.ANTHROPIC_API_KEY
-      : process.env.OPENAI_API_KEY);
+  const envVar = ENV_KEY_MAP[config.llm.provider] ?? "GEMINI_API_KEY";
+  const apiKey = config.llm.apiKey ?? process.env[envVar];
 
   if (!apiKey) {
     throw new Error(
-      `No API key found. Set ${
-        config.llm.provider === "anthropic"
-          ? "ANTHROPIC_API_KEY"
-          : "OPENAI_API_KEY"
-      } environment variable or add llm.apiKey to config.`
+      `No API key found. Set ${envVar} environment variable or add llm.apiKey to config.`
     );
   }
 
@@ -38,6 +38,9 @@ export function createProvider(config: CartographerConfig): LLMProvider {
 
   if (config.llm.provider === "anthropic") {
     return new AnthropicProvider(options);
+  }
+  if (config.llm.provider === "gemini") {
+    return new GeminiProvider(options);
   }
   return new OpenAIProvider(options);
 }
@@ -77,7 +80,10 @@ export async function analyzeFiles(
       for (const result of results) {
         descriptions.set(result.path, result.description);
       }
-    } catch (err) {
+    } catch (err: any) {
+      if (process.env.CARTOGRAPHER_DEBUG) {
+        console.error(`\nBatch error: ${err.message ?? err}`);
+      }
       for (const f of batch) {
         pending.push(f.relativePath);
       }
